@@ -1,0 +1,10 @@
+let
+    Source = Table.NestedJoin(rawPCV_forBacklog, {"Name"}, dateMatrix, {"Name"}, "dateMatrix", JoinKind.LeftOuter),
+    #"Expanded dateMatrix" = Table.ExpandTableColumn(Source, "dateMatrix", {"DATE1", "DATE2"}, {"dateMatrix.DATE1", "dateMatrix.DATE2"}),
+    #"Added Custom" = Table.AddColumn(#"Expanded dateMatrix", "isInTimeRangeScope", each if [reference Date] >= [dateMatrix.DATE1] and [reference Date] < [dateMatrix.DATE2]  then 1 else 0),
+    #"Filtered Rows" = Table.SelectRows(#"Added Custom", each ([isInTimeRangeScope] = 1)),
+    #"Filtered Rows1" = Table.SelectRows(#"Filtered Rows", each ([dateMatrix.DATE2] = #date(2050, 1, 1))),
+    #"Removed Columns" = Table.RemoveColumns(#"Filtered Rows1",{"Name", "reference Date", "dateMatrix.DATE1", "dateMatrix.DATE2", "isInTimeRangeScope"}),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Columns",{{"Molo di Scarico", "Mag."}, {"Cod. CDC", "Domaine"}})
+in
+    #"Renamed Columns"
