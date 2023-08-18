@@ -1,0 +1,18 @@
+let
+    Source = rawPCV,
+    #"Removed Columns2" = Table.RemoveColumns(Source,{"Cod. P/N", "Desc. P/N", "Data", "Delins+A8", "MRP", "Cod. Fornitore", "Fornitore", "Desc. Luogo di Presa", "Transit Time", "Cod. Carrier", "Spedizioniere", "Luogo di Presa", "JIT Supply Type", "Flag Multiforn.", "Lastr/Vern", "Avviamento", "Flag Overseas", "Overseas Flag P/N", "Cod. CDC", "Desc. CDC", "Molo di Scarico", "ST_COST_CENTER.PLANT_CODE", "Cod. MDR", "P/N per MDR", "Qta MDR", "FDC"}),
+    #"add week day num" = Table.AddColumn(#"Removed Columns2", "weekdayNum", each Date.DayOfWeek( [reference Date] )),
+    #"week day num to be int" = Table.TransformColumnTypes(#"add week day num",{{"weekdayNum", Int64.Type}}),
+    #"Added Custom2" = Table.AddColumn(#"week day num to be int", "temp ref date", each Date.AddDays([reference Date],-1*[weekdayNum])),
+    #"new ref date created" = Table.TransformColumnTypes(#"Added Custom2",{{"temp ref date", type date}}),
+    #"Removed Columns" = Table.RemoveColumns(#"new ref date created",{"reference Date", "weekdayNum"}),
+    #"final mod on new ref date" = Table.RenameColumns(#"Removed Columns",{{"temp ref date", "reference Date"}}),
+    #"Grouped Rows" = Table.Group(#"final mod on new ref date", {"Name"}, {{"DATE1", each List.Min([reference Date]), type nullable date}}),
+    #"Sorted Rows" = Table.Sort(#"Grouped Rows",{{"DATE1", Order.Ascending}}),
+    #"Added Index" = Table.AddIndexColumn(#"Sorted Rows", "Index", 0, 1, Int64.Type),
+    #"Reordered Columns" = Table.ReorderColumns(#"Added Index",{"Index", "Name", "DATE1"}),
+    #"Added Custom" = Table.AddColumn(#"Reordered Columns", "DATE2", each try #"Added Index" [DATE1] { [Index]  + 1 } otherwise null),
+    #"Replaced Value" = Table.ReplaceValue(#"Added Custom",null,defaultFutureFuture,Replacer.ReplaceValue,{"DATE2"}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Replaced Value",{{"DATE2", type date}})
+in
+    #"Changed Type"
