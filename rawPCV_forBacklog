@@ -1,0 +1,21 @@
+let
+    Source = Folder.Files( getPCVFolderPath() ),
+    #"attr_hidden" = Table.SelectRows(Source, each [Attributes]?[Hidden]? <> true),
+    transformedColumn = Table.AddColumn(#"attr_hidden", "TABLES", each transform([Content])),
+    simpleTableNow = Table.SelectColumns(transformedColumn, {"Name", "TABLES"}),
+    // old: expandedTable = Table.ExpandTableColumn(simpleTableNow, "TABLES", tb_PCV__PRS004 ),
+    expandedTable = Table.ExpandTableColumn( simpleTableNow, "TABLES", rawPCVPattern__FOO(getPCVFolderPath())),
+    try1 = try Table.RenameColumns(expandedTable,{{"Anticipo/Ritardo YTD", "Ahead/Behind YTD"}}) otherwise expandedTable,
+    try2 = try Table.RenameColumns(try1,{{"A/R YTD", "Ahead/Behind PN Qty Sun22"}}) otherwise try1,
+    try3 = try Table.RenameColumns(try2,{{"sdlifuefaeiufnwlf", "euyrturyetiurt"}}) otherwise try2,
+    #"Removed Columns1" = Table.RemoveColumns(try3,{"Ahead/Behind YTD", "Consegnato YTD", "Delins+A8 YTD", "Desc. Luogo di Presa", "Transit Time", "Cod. Carrier", "Spedizioniere", "Luogo di Presa", "JIT Supply Type", "Flag Multiforn.", "Lastr/Vern", "Avviamento", "Flag Overseas", "Overseas Flag P/N", "Desc. CDC", "ST_COST_CENTER.PLANT_CODE", "Cod. MDR", "P/N per MDR", "Qta MDR", "FDC"}),
+    #"ref date to be date" = Table.TransformColumnTypes(#"Removed Columns1",{{"reference Date", type date}}),
+    #"Filtered Rows" = Table.SelectRows(#"ref date to be date", each true),
+    #"Sorted Rows" = Table.Sort(#"Filtered Rows",{{"reference Date", Order.Descending}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Sorted Rows",{{"Data", type date}}),
+    #"Removed Errors" = Table.RemoveRowsWithErrors(#"Changed Type", {"Data"}),
+    #"Removed Columns" = Table.RemoveColumns(#"Removed Errors",{"Data", "Delins+A8"}),
+    #"Grouped Rows" = Table.Group(#"Removed Columns", {"Name", "Cod. P/N", "Desc. P/N", "MRP", "Cod. Fornitore", "reference Date", "Cod. CDC", "Molo di Scarico", "Fornitore"}, {{"AHEAD / BEHIND", each List.Max([#"Ahead/Behind PN Qty Sun22"]), type number}}),
+    #"Filtered Rows1" = Table.SelectRows(#"Grouped Rows", each ([#"AHEAD / BEHIND"] <> "-"))
+in
+    #"Filtered Rows1"
