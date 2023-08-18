@@ -1,0 +1,9 @@
+let
+    Source = Table.NestedJoin(rawPCV, {"Name"}, dateMatrix, {"Name"}, "dateMatrix", JoinKind.LeftOuter),
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Data", type date}}),
+    #"Expanded dateMatrix" = Table.ExpandTableColumn(#"Changed Type", "dateMatrix", {"DATE1", "DATE2"}, {"dateMatrix.DATE1", "dateMatrix.DATE2"}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Expanded dateMatrix",{{"Avviamento", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "isInTimeRangeScope", each if (Text.Contains([Avviamento], "x") or ([Data] >= [dateMatrix.DATE1] and [Data] < [dateMatrix.DATE2]))  then 1 else 0),
+    #"Filtered Rows" = Table.SelectRows(#"Added Custom", each ([isInTimeRangeScope] = 1))
+in
+    #"Filtered Rows"
