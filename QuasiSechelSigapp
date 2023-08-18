@@ -1,0 +1,28 @@
+let
+    Source = PCV_SRC,
+    // this filtering is not taken into consideration!
+    //#"Filtered Rows" = 
+    //    Table.SelectRows(Source, 
+    //        each [Data] >= #date(Date.Year(QSS_DATE1) , Date.Month(QSS_DATE1), Date.Day(QSS_DATE1)) 
+    //        and 
+    //        [Data] <= #date(Date.Year(QSS_DATE2) , Date.Month(QSS_DATE2), Date.Day(QSS_DATE2))),
+    #"Duplicated Column" = Table.DuplicateColumn(Source, "Cod. P/N", "Cod. P/N - Copy"),
+    #"Split Column by Delimiter" = Table.SplitColumn(#"Duplicated Column", "Cod. P/N - Copy", Splitter.SplitTextByDelimiter("E", QuoteStyle.Csv), {"Artice", "Artice.2"}),
+    // #"remove E" = Table.ReplaceValue(#"Duplicated Column", "", ""), // NOK
+    #"Filtered Rows1" = Table.SelectRows(#"Split Column by Delimiter", each true),
+    #"Removed Columns" = Table.RemoveColumns(#"Filtered Rows1",{"Artice.2", "isInTimeRangeScope", "filename", "Cod. P/N", "Desc. Luogo di Presa", "Transit Time", "Cod. Carrier", "Spedizioniere", "Luogo di Presa", "JIT Supply Type", "Flag Multiforn.", "Lastr/Vern", "Avviamento", "Flag Overseas", "Overseas Flag P/N", "reference Date", "dateMatrix.DATE1", "dateMatrix.DATE2", "L2_TXT", "Cod. MDR", "P/N per MDR", "Qta MDR", "FDC"}),
+    #"Duplicated Column1" = Table.DuplicateColumn(#"Removed Columns", "MRP", "MRP - Copy"),
+    #"Renamed Columns" = Table.RenameColumns(#"Duplicated Column1",{{"MRP - Copy", "GAc Nom NOA"}, {"MRP", "NOA"}}),
+    #"remove #2" = Table.RemoveColumns(#"Renamed Columns",{"Desc. CDC", "ST_COST_CENTER.PLANT_CODE"}),
+    #"Added RU" = Table.AddColumn(#"remove #2", "RU", each ""),
+    #"Added Doc achat" = Table.AddColumn(#"Added RU", "Doc achat", each ""),
+    #"Added GAc" = Table.AddColumn(#"Added Doc achat", "GAc", each ""),
+    #"Renamed Columns1" = Table.RenameColumns(#"Added GAc",{{"Desc. P/N", "Désignation"}, {"Cod. Fornitore", "Fourn."}, {"Fornitore", "Nom fournisseur"}}),
+    #"Renamed Columns2" = Table.RenameColumns(#"Renamed Columns1",{{"Molo di Scarico", "Mag."}, {"Cod. CDC", "Domaine"}, {"Data", "Date écheance"}, {"Delins+A8", "Qté échéancée"}}),
+    #"Added Custom" = Table.AddColumn(#"Renamed Columns2", "Quantité livrée", each 0),
+    #"Reordered Columns" = Table.ReorderColumns(#"Added Custom",{"GAc Nom NOA", "Artice", "Désignation", "Fourn.", "Nom fournisseur", "RU", "Mag.", "Doc achat", "GAc", "Domaine", "NOA", "Date écheance", "Qté échéancée", "Quantité livrée"}),
+    #"Renamed Columns3" = Table.RenameColumns(#"Reordered Columns",{{"Artice", "Article"}}),
+    // #"Filtered Rows2" = Table.SelectRows(#"Renamed Columns3", each (List.Contains(MRP_FILTER_LIST, [GAc Nom NOA])))
+    #"out1" = #"Renamed Columns3"
+in
+    #"out1"
