@@ -1,0 +1,25 @@
+let
+    Source = rawPCVwithTimeRange,
+    beSureThatDataIsAllDateType = Table.TransformColumnTypes(Source,{{"Data", type date}}),
+    rename1 = Table.RenameColumns(beSureThatDataIsAllDateType, {{"Name", "filename"}}),
+    makeNewCol1 = Table.DuplicateColumn(rename1, "filename", "filename2"),
+    split1 = Table.SplitColumn(makeNewCol1, 
+        "filename2", 
+        Splitter.SplitTextByDelimiter("."), {"baseFilename", "ext"}),
+    extRemoved = Table.RemoveColumns(split1,{"ext"}),
+    customTextedQuasiData = 
+        Table.AddColumn(extRemoved, "label", each Number.ToText( Date.Year([Data]) * 10000 
+                + Date.Month([Data]) * 100 
+                + Date.Day([Data])) & "__" & [baseFilename]),
+    makeNewCol2 = Table.DuplicateColumn(customTextedQuasiData, "label", "copy of the label"),
+    rename2 = Table.RenameColumns(makeNewCol2, {{"copy of the label", "l2"}}),
+    #"splitAgain" = Table.SplitColumn(rename2, "l2", Splitter.SplitTextByDelimiter("__"), {"L2_TXT","l2.2"}  ),
+    #"beSureThatThisIsText" = 
+        Table.TransformColumnTypes(#"splitAgain",{{"l2.2", type text}, {"L2_TXT", type text}}),
+    #"Sorted Rows" = Table.Sort(beSureThatThisIsText,{{"Data", Order.Descending}, {"reference Date", Order.Descending}}),
+    RemovedDuplicates1 = 
+        Table.Distinct(#"Sorted Rows", {"Cod. P/N", "Desc. P/N", "Cod. Fornitore", "L2_TXT"}),
+    leanTable = Table.RemoveColumns(RemovedDuplicates1, {"l2.2", "label", "baseFilename"}),
+    out1 = leanTable
+in
+    out1
