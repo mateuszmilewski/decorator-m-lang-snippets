@@ -1,0 +1,23 @@
+let
+    Source = Folder.Files( getPCVFolderPath() ),
+    #"attr_hidden" = Table.SelectRows(Source, each [Attributes]?[Hidden]? <> true),
+    transformedColumn = Table.AddColumn(#"attr_hidden", "TABLES", each transform([Content])),
+    simpleTableNow = Table.SelectColumns(transformedColumn, {"Name", "TABLES"}),
+    // old: expandedTable = Table.ExpandTableColumn(simpleTableNow, "TABLES", tb_PCV__PRS004 ),
+    // #"expandedTable" = Table.ExpandTableColumn( simpleTableNow, "TABLES", rawPCVPattern),
+    expandedTable = Table.ExpandTableColumn( simpleTableNow, "TABLES", rawPCVPattern__FOO(getPCVFolderPath())),
+    try1 = try Table.RenameColumns(expandedTable,{{"Anticipo/Ritardo YTD", "Ahead/Behind YTD"}}) otherwise expandedTable,
+    try2 = try Table.RenameColumns(try1,{{"A/R YTD", "Ahead/Behind PN Qty Sun22"}}) otherwise try1,
+    try3 = try Table.RenameColumns(try2,{{"sdlifuefaeiufnwlf", "euyrturyetiurt"}}) otherwise try2,
+    // #"Filtered Empty Rows" = Table.SelectRows(try3, each [#"Delins+A8"] <> 0 or [Consegnato YTD] > 0),
+    #"ref date to be date" = Table.TransformColumnTypes(try3,{{"reference Date", type date}}),
+    #"SUM HELPER ADDED" = Table.AddColumn(#"ref date to be date", "SUM_HELPER", each [Consegnato YTD]+[#"Delins+A8"]),
+    #"SUM HELPER BIGGER THAN ZERO" = Table.SelectRows(#"SUM HELPER ADDED", each ([SUM_HELPER] <> 0)),
+    #"Filtered Rows" = Table.SelectRows(#"SUM HELPER BIGGER THAN ZERO", each true),
+    #"Sorted Rows" = Table.Sort(#"Filtered Rows",{{"reference Date", Order.Descending}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Sorted Rows",{{"Data", type date}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Ahead/Behind YTD", "Ahead/Behind PN Qty Sun22", "Consegnato YTD", "Delins+A8 YTD", "Stock Plant", "Stk Plant 22"}),
+    #"Removed Errors" = Table.RemoveRowsWithErrors(#"Removed Columns", {"Data"}),
+    #"Removed Columns1" = Table.RemoveColumns(#"Removed Errors",{"SUM_HELPER"})
+in
+    #"Removed Columns1"
