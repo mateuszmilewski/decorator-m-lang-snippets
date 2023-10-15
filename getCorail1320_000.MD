@@ -1,4 +1,4 @@
-```
+```M
 let
     var1partflowliststr = "Z-PartFlowList.xlsx",
     var2 = Replacer.ReplaceText(getCurrentPath(), "DECORATOR", "CORAIL_SRC"),
