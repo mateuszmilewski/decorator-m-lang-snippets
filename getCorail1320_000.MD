@@ -1,3 +1,7 @@
+##getCorail1320_000
+
+
+```M
 let
     var1partflowliststr = "Z-PartFlowList.xlsx",
     var2 = Replacer.ReplaceText(getCurrentPath(), "DECORATOR", "CORAIL_SRC"),
@@ -45,3 +49,4 @@ let
         Table.RemoveColumns(#"Changed Type1",{"rawTime.2"})
 in
     #"Removed Columns"
+```
