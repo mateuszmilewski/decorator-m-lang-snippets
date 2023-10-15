@@ -1,8 +1,14 @@
 let
     Source = getCorail1320_000,
-    #"Sorted Rows" = Table.Sort(Source,{{"rawTime.1", Order.Descending}}),
-    #"Removed Columns" = Table.RemoveColumns(#"Sorted Rows",{"Name - Copy.2", "Content", "Extension", "Date accessed", "Date modified", "Date created", "Attributes"}),
-    #"Added Index" = Table.AddIndexColumn(#"Removed Columns", "Index", 0, 1, Int64.Type),
-    #"Removed Duplicates" = Table.Distinct(#"Added Index", {"Produit", "Vendeur", "Expéditeur", "Fabricant", "Centre Utilisateur", "Id Appro"})
+    #"Sorted Rows" = 
+        Table.Sort(Source,{{"rawTime.1", Order.Descending}}),
+    #"Removed Columns" = 
+        Table.RemoveColumns(#"Sorted Rows",{"Name - Copy.2", "Content", "Extension", 
+        "Date accessed", "Date modified", "Date created", "Attributes"}),
+    #"Added Index" = 
+        Table.AddIndexColumn(#"Removed Columns", "Index", 0, 1, Int64.Type),
+    #"Removed Duplicates" = 
+        Table.Distinct(#"Added Index", 
+        {"Produit", "Vendeur", "Expéditeur", "Fabricant", "Centre Utilisateur", "Id Appro"})
 in
     #"Removed Duplicates"
